@@ -21,12 +21,12 @@
   .logo{margin-bottom:64px;}
   .logo img{height:19px;display:block;}
   .eyebrow{font-size:11px;color:var(--gy);text-transform:uppercase;text-align:center;}
-  h1{font-size:16.5px;font-weight:400;line-height:1.5;text-align:center;word-break:keep-all;}
+  h1{font-size:16.5px;font-weight:300;line-height:1.5;text-align:center;word-break:keep-all;}
   .sub{font-size:12px;color:var(--gy);line-height:1.8;text-align:center;word-break:keep-all;}
   .btn{
     display:block;width:260px;max-width:100%;margin-left:auto;margin-right:auto;padding:15px 0;
     border:1px solid var(--bk);background:#fff;color:var(--bk);
-    font-family:inherit;font-size:13px;font-weight:500;text-transform:uppercase;
+    font-family:inherit;font-size:13px;font-weight:400;text-transform:uppercase;
     text-align:center;text-decoration:none;cursor:pointer;
     transition:background .25s,color .25s,opacity .2s;
   }
@@ -46,6 +46,16 @@
   @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
   @media (prefers-reduced-motion:reduce){.screen{animation:none;} *{transition:none!important;}}
   .foot{margin-top:72px;font-size:11px;color:var(--gy2);text-transform:uppercase;text-align:center;}
+  .cardOverlay{
+    position:fixed;inset:0;background:rgba(255,255,255,.96);
+    display:none;justify-content:center;align-items:center;z-index:20;padding:24px;
+  }
+  .cardOverlay.on{display:flex;}
+  .cardBox{display:flex;flex-direction:column;align-items:center;max-width:340px;width:100%;}
+  .cardBox img{width:100%;max-height:64vh;object-fit:contain;border:1px solid var(--hl);}
+  .cardGuide{font-size:13px;color:var(--bk);line-height:1.9;text-align:center;margin:20px 0 18px;word-break:keep-all;}
+  .cardGuide b{font-weight:500;}
+  .cardActs{display:flex;gap:32px;}
   .toast{
     position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
     background:var(--bk);color:#fff;font-size:12px;
@@ -64,7 +74,7 @@
   .qhead span{font-size:12px;color:var(--gy);text-transform:uppercase;font-variant-numeric:tabular-nums;}
   .progress{width:100%;height:1px;background:var(--hl);position:relative;margin-bottom:64px;}
   .progress i{position:absolute;left:0;top:0;height:1px;background:var(--bk);transition:width .4s ease;}
-  .qtext{font-size:16.5px;font-weight:400;line-height:1.6;text-align:center;word-break:keep-all;min-height:62px;}
+  .qtext{font-size:16.5px;font-weight:300;line-height:1.6;text-align:center;word-break:keep-all;min-height:62px;}
   .opts{width:100%;margin-top:44px;border-top:1px solid var(--hl);}
   .opt{
     width:100%;display:flex;align-items:center;gap:18px;
@@ -75,7 +85,7 @@
   }
   .opt em{font-style:normal;font-size:11px;color:var(--gy2);min-width:14px;}
   .opt:active{padding-left:12px;background:#fcfcfc;}
-  #result .rTitle{font-size:16.5px;font-weight:400;text-align:center;margin-top:20px;}
+  #result .rTitle{font-size:16.5px;font-weight:300;text-align:center;margin-top:20px;}
   .rTees{display:flex;gap:14px;width:100%;margin:48px 0 0;}
   .tee{width:calc(50% - 7px);display:flex;flex-direction:column;}
   .tee img{width:100%;display:block;}
@@ -122,9 +132,22 @@
       <button class="btn" onclick="shareResult()">공유하기</button>
     </div>
     <div class="tools">
+      <button class="tlink" onclick="saveCard()">이미지 저장</button>
       <button class="tlink muted" onclick="location.href=location.pathname">다시하기</button>
     </div>
     <div class="foot">© 2026 LEVAR.</div>
+  </div>
+</div>
+<div class="cardOverlay" id="cardOverlay">
+  <div class="cardBox">
+    <img id="cardImg" alt="나의 페어링 카드">
+    <p class="cardGuide">이미지를 <b>길게 눌러 저장</b>한 뒤<br>인스타그램 스토리에 올려주세요.</p>
+    <div class="cardActs">
+      <button class="tlink" id="cardShare" onclick="shareCardBlob()">스토리로 공유</button>
+      <a class="tlink" id="cardDl" download="levar-pairing.png">이미지 다운로드</a>
+      <button class="tlink" onclick="copyResultLink()">링크 복사</button>
+      <button class="tlink muted" onclick="closeCard()">닫기</button>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast">링크가 복사되었습니다</div>
@@ -234,7 +257,7 @@ async function buildResultCard(key){
   const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
   const ctx=cv.getContext("2d");
   ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,W,H);
-  try{ await document.fonts.load('400 72px "Pretendard"'); await document.fonts.load('400 30px "minerva-modern"'); }catch(e){}
+  try{ await document.fonts.load('300 82px "Pretendard"'); await document.fonts.load('300 36px "Pretendard"'); await document.fonts.load('400 30px "minerva-modern"'); await document.fonts.ready; }catch(e){}
   const loadImg=src=>new Promise(res=>{const i=new Image(); i.onload=()=>res(i); i.src=src;});
   // logo
   const logoEl=document.querySelector(".logo img");
@@ -242,7 +265,7 @@ async function buildResultCard(key){
   ctx.textAlign="center";
   ctx.fillStyle="#aaaaaa"; ctx.font='400 30px "minerva-modern","Pretendard",sans-serif';
   ctx.fillText("MY ALL-DAY PAIRING", W/2, 400);
-  ctx.fillStyle="#888888"; ctx.font='400 82px "Pretendard",sans-serif';
+  ctx.fillStyle="#888888"; ctx.font='300 82px "Pretendard",sans-serif';
   ctx.fillText(r.name, W/2, 512);
   // tees
   const tR=await loadImg(TILES[r.r[0]]), tV=await loadImg(TILES[r.v[0]]);
@@ -254,30 +277,58 @@ async function buildResultCard(key){
   ctx.fillStyle="#888888"; ctx.font='400 34px "minerva-modern","Pretendard",sans-serif';
   ctx.fillText(r.r[1], x0+tw/2, cy+52); ctx.fillText(r.v[1], x0+tw+gap+tw/2, cy+52);
   // copy (2 lines max, split by sentence)
-  ctx.font='400 36px "Pretendard",sans-serif';
+  ctx.font='300 36px "Pretendard",sans-serif';
   const parts=r.copy.split(". ").map((s,i,a)=>i<a.length-1?s+".":s);
   parts.forEach((line,i)=>ctx.fillText(line, W/2, cy+180+i*62));
   return new Promise(res=>cv.toBlob(b=>res(b),"image/png"));
 }
 
+function closeCard(){ $("cardOverlay").classList.remove("on"); }
+let __cardBlob=null;
+function openCard(blob){
+  __cardBlob=blob;
+  const u=URL.createObjectURL(blob);
+  $("cardImg").src=u; $("cardDl").href=u;
+  const file=new File([blob],"levar-pairing.png",{type:"image/png"});
+  $("cardShare").style.display=(navigator.canShare&&navigator.canShare({files:[file]}))?"":"none";
+  $("cardOverlay").classList.add("on");
+}
+async function shareCardBlob(){
+  if(!__cardBlob) return;
+  const key=new URLSearchParams(location.search).get("r");
+  const text=key&&RESULTS[key] ? "나의 올데이 페어링은 '"+RESULTS[key].name+"' — LEVAR "+location.href : location.href;
+  const file=new File([__cardBlob],"levar-pairing.png",{type:"image/png"});
+  try{ await navigator.share({files:[file], text}); }catch(e){}
+}
+async function saveCard(){
+  const key=new URLSearchParams(location.search).get("r");
+  if(!key||!RESULTS[key]) return;
+  try{ openCard(await buildResultCard(key)); }catch(e){}
+}
+function copyResultLink(){
+  navigator.clipboard.writeText(location.href).then(()=>{ $("toast").classList.add("show"); setTimeout(()=>$("toast").classList.remove("show"),1800); });
+}
 async function shareResult(){
   const url=location.href;
   const key=new URLSearchParams(location.search).get("r");
   const text=key&&RESULTS[key] ? "나의 올데이 페어링은 '"+RESULTS[key].name+"' — LEVAR" : "나의 올데이 페어링 — LEVAR";
-  // 1) 이미지 파일 공유 (인스타그램 -> 스토리에 추가 가능)
-  if(key&&RESULTS[key]&&navigator.canShare){
+  if(key&&RESULTS[key]){
     try{
       const blob=await buildResultCard(key);
       const file=new File([blob],"levar-pairing.png",{type:"image/png"});
-      if(navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], text:text+" "+url});
-        return;
+      // 1) 이미지 파일 공유 지원 -> 공유시트 (인스타 '스토리에 추가' 가능)
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], text:text+" "+url}); return; }
+        catch(e){ if(e&&e.name==="AbortError") return; }
       }
-    }catch(e){ if(e&&e.name==="AbortError") return; }
+      // 2) 미지원 -> 카드 오버레이 (꾹 눌러 저장)
+      openCard(blob);
+      return;
+    }catch(e){}
   }
-  // 2) 폴백: URL 공유 / 복사
+  // 3) 최종 폴백: URL 공유/복사
   if(navigator.share){ navigator.share({title:"My All-day Pairing",text,url}).catch(()=>{}); }
-  else{ navigator.clipboard.writeText(url).then(()=>{ $("toast").classList.add("show"); setTimeout(()=>$("toast").classList.remove("show"),1800); }); }
+  else{ copyResultLink(); }
 }
 (function init(){
   const key=new URLSearchParams(location.search).get("r");
