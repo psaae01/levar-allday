@@ -118,11 +118,11 @@
     <p class="rCopy" id="rCopy"></p>
     <div class="rBtns">
       <a class="btn fill" id="linkCombined" target="_blank" rel="noopener">이 페어로 보러가기</a>
-      <a class="btn quiet" id="linkStudio" href="studio.html">직접 조합해보기 — Studio</a>
+      <a class="btn" id="linkStudio" href="studio.html">직접 조합해보기 — Studio</a>
+      <button class="btn" onclick="shareResult()">공유하기</button>
     </div>
     <div class="tools">
-      <button class="tlink" onclick="shareResult()">Share</button>
-      <button class="tlink muted" onclick="location.href=location.pathname">Retry</button>
+      <button class="tlink muted" onclick="location.href=location.pathname">다시하기</button>
     </div>
     <div class="foot">© 2026 LEVAR.</div>
   </div>
@@ -228,10 +228,54 @@ function showResult(key){
   history.replaceState(null,"",location.pathname+"?r="+key);
   show("result");
 }
-function shareResult(){
+async function buildResultCard(key){
+  const r=RESULTS[key];
+  const W=1080,H=1920;
+  const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  const ctx=cv.getContext("2d");
+  ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,W,H);
+  try{ await document.fonts.load('400 72px "Pretendard"'); await document.fonts.load('400 30px "minerva-modern"'); }catch(e){}
+  const loadImg=src=>new Promise(res=>{const i=new Image(); i.onload=()=>res(i); i.src=src;});
+  // logo
+  const logoEl=document.querySelector(".logo img");
+  if(logoEl){ const lg=await loadImg(logoEl.src); const lh=44, lw=lg.width/lg.height*lh; ctx.drawImage(lg,(W-lw)/2,210,lw,lh); }
+  ctx.textAlign="center";
+  ctx.fillStyle="#aaaaaa"; ctx.font='400 30px "minerva-modern","Pretendard",sans-serif';
+  ctx.fillText("MY ALL-DAY PAIRING", W/2, 400);
+  ctx.fillStyle="#888888"; ctx.font='400 82px "Pretendard",sans-serif';
+  ctx.fillText(r.name, W/2, 512);
+  // tees
+  const tR=await loadImg(TILES[r.r[0]]), tV=await loadImg(TILES[r.v[0]]);
+  const tw=470, th=tw*tR.height/tR.width, gap=32, x0=(W-(tw*2+gap))/2, ty=610;
+  ctx.drawImage(tR,x0,ty,tw,th); ctx.drawImage(tV,x0+tw+gap,ty,tw,th);
+  const cy=ty+th+72;
+  ctx.fillStyle="#aaaaaa"; ctx.font='400 26px "minerva-modern","Pretendard",sans-serif';
+  ctx.fillText("ROUND", x0+tw/2, cy); ctx.fillText("V-NECK", x0+tw+gap+tw/2, cy);
+  ctx.fillStyle="#888888"; ctx.font='400 34px "minerva-modern","Pretendard",sans-serif';
+  ctx.fillText(r.r[1], x0+tw/2, cy+52); ctx.fillText(r.v[1], x0+tw+gap+tw/2, cy+52);
+  // copy (2 lines max, split by sentence)
+  ctx.font='400 36px "Pretendard",sans-serif';
+  const parts=r.copy.split(". ").map((s,i,a)=>i<a.length-1?s+".":s);
+  parts.forEach((line,i)=>ctx.fillText(line, W/2, cy+180+i*62));
+  return new Promise(res=>cv.toBlob(b=>res(b),"image/png"));
+}
+
+async function shareResult(){
   const url=location.href;
   const key=new URLSearchParams(location.search).get("r");
   const text=key&&RESULTS[key] ? "나의 올데이 페어링은 '"+RESULTS[key].name+"' — LEVAR" : "나의 올데이 페어링 — LEVAR";
+  // 1) 이미지 파일 공유 (인스타그램 -> 스토리에 추가 가능)
+  if(key&&RESULTS[key]&&navigator.canShare){
+    try{
+      const blob=await buildResultCard(key);
+      const file=new File([blob],"levar-pairing.png",{type:"image/png"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], text:text+" "+url});
+        return;
+      }
+    }catch(e){ if(e&&e.name==="AbortError") return; }
+  }
+  // 2) 폴백: URL 공유 / 복사
   if(navigator.share){ navigator.share({title:"My All-day Pairing",text,url}).catch(()=>{}); }
   else{ navigator.clipboard.writeText(url).then(()=>{ $("toast").classList.add("show"); setTimeout(()=>$("toast").classList.remove("show"),1800); }); }
 }
